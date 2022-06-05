@@ -104,7 +104,7 @@ def make_cartpole_config() -> MuZeroConfig:
         network_args={'action_size': 2,
                       'state_size': 4,
                       'representation_size': 4,
-                      'max_value': 500},
+                      'max_value': 200}, # Maximum episode steps for cartpole-v0
         network=CartPoleNetwork,
         action_space_size=2,
         max_moves=1000,
