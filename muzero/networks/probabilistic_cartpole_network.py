@@ -5,7 +5,6 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.keras import regularizers, Sequential
 from tensorflow.keras.layers import Dense
-from tensorflow_probability.layers import DenseVariational, VariableLayer, DistributionLambda
 
 from game.game import Action
 from networks.network import BaseNetwork
@@ -17,8 +16,8 @@ def posterior_mean_field(kernel_size, bias_size=0, dtype=None):
   n = kernel_size + bias_size
   c = np.log(np.expm1(1.))
   return Sequential([
-      VariableLayer(2 * n, dtype=dtype),
-      DistributionLambda(lambda t: tfd.Independent(
+      tfp.layers.VariableLayer(2 * n, dtype=dtype),
+      tfp.layers.DistributionLambda(lambda t: tfd.Independent(
           tfd.Normal(loc=t[..., :n],
                      scale=1e-5 + tf.nn.softplus(c + t[..., n:])))),
   ])
@@ -26,8 +25,8 @@ def posterior_mean_field(kernel_size, bias_size=0, dtype=None):
 def prior_trainable(kernel_size, bias_size=0, dtype=None):
   n = kernel_size + bias_size
   return Sequential([
-      VariableLayer(n, dtype=dtype),
-      DistributionLambda(lambda t: tfd.Independent(
+      tfp.layers.VariableLayer(n, dtype=dtype),
+      tfp.layers.DistributionLambda(lambda t: tfd.Independent(
           tfd.Normal(loc=t, scale=1))),
   ])
 
@@ -54,9 +53,9 @@ class ProbabilisticCartPoleNetwork(BaseNetwork):
         policy_network = Sequential([Dense(hidden_neurons, activation='relu', kernel_regularizer=regularizer),
                                      Dense(action_size, kernel_regularizer=regularizer)])
         dynamic_network = Sequential([
-          DenseVariational(hidden_neurons, posterior_mean_field, prior_trainable, kl_weight=0.01,
+          tfp.layers.DenseVariational(hidden_neurons, posterior_mean_field, prior_trainable, kl_weight=0.01,
                             activation='relu', kernel_regularizer=regularizer),
-          DenseVariational(representation_size, posterior_mean_field, prior_trainable, kl_weight=0.01,
+          tfp.layers.DenseVariational(representation_size, posterior_mean_field, prior_trainable, kl_weight=0.01,
                             activation=representation_activation, kernel_regularizer=regularizer),
           # tfp.layers.DistributionLambda(lambda t: tfd.Normal(loc=t, scale=1)),
         ])
