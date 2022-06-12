@@ -10,6 +10,8 @@ from game.game import Action
 from networks.network import BaseNetwork
 
 tfd = tfp.distributions
+tfpl = tfp.layers
+
 negative_log_likelihood = lambda y, rv_y: -rv_y.log_prob(y)
 
 def posterior_mean_field(kernel_size, bias_size=0, dtype=None):
@@ -52,13 +54,20 @@ class ProbabilisticCartPoleNetwork(BaseNetwork):
                                     Dense(self.value_support_size, kernel_regularizer=regularizer)])
         policy_network = Sequential([Dense(hidden_neurons, activation='relu', kernel_regularizer=regularizer),
                                      Dense(action_size, kernel_regularizer=regularizer)])
-        dynamic_network = Sequential([
-          tfp.layers.DenseVariational(hidden_neurons, posterior_mean_field, prior_trainable, kl_weight=0.001,
-                            activation='relu', activity_regularizer=regularizer),
-          tfp.layers.DenseVariational(representation_size, posterior_mean_field, prior_trainable, kl_weight=0.001,
-                            activation=representation_activation, activity_regularizer=regularizer),
-          # tfp.layers.DistributionLambda(lambda t: tfd.Normal(loc=t, scale=1)),
-        ])
+        # dynamic_network = Sequential([
+        #   tfp.layers.DenseVariational(hidden_neurons, posterior_mean_field, prior_trainable, kl_weight=0.001,
+        #                     activation='relu', activity_regularizer=regularizer),
+        #   tfp.layers.DenseVariational(representation_size, posterior_mean_field, prior_trainable, kl_weight=0.001,
+        #                     activation=representation_activation, activity_regularizer=regularizer),
+        # ])
+
+        dynamic_network = Sequential([Dense(hidden_neurons, activation='relu', kernel_regularizer=regularizer),
+                                      Dense(representation_size + 1, activation=representation_activation,
+                                            kernel_regularizer=regularizer),
+                                    tfpl.DistributionLambda(
+                                        lambda t: tfd.Normal(loc=t[..., :representation_size],
+                                                            scale=1e-3 + tf.math.softplus(0.05 * t[...,representation_size:]))),
+                                            ])
         reward_network = Sequential([Dense(16, activation='relu', kernel_regularizer=regularizer),
                                      Dense(1, kernel_regularizer=regularizer)])
 
