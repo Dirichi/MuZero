@@ -3,12 +3,20 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.losses import MSE
+from tensorflow.math import l2_normalize
 
 from config import MuZeroConfig
 from networks.network import BaseNetwork
 from networks.shared_storage import SharedStorage
 from training.replay_buffer import ReplayBuffer
 
+negative_log_likelihood = lambda y, rv_y: -rv_y.log_prob(y)
+
+def negative_similarity(a, b):
+    a_n = l2_normalize(a, axis=-1, epsilon=1e-5)
+    b_n = l2_normalize(b, axis=-1, epsilon=1e-5)
+    product = -(a_n * b_n)
+    return tf.math.reduce_sum(product, axis=1)
 
 def train_network(config: MuZeroConfig, storage: SharedStorage, replay_buffer: ReplayBuffer, epochs: int):
     network = storage.current_network
@@ -33,7 +41,7 @@ def update_weights(optimizer: tf.keras.optimizers, network: BaseNetwork, batch):
         representation_batch, value_batch, policy_batch = network.initial_model(np.array(image_batch))
 
         # Only update the element with a policy target
-        target_value_batch, _, target_policy_batch = zip(*targets_init_batch)
+        target_value_batch, _, target_policy_batch, _ = zip(*targets_init_batch)
         mask_policy = list(map(lambda l: bool(l), target_policy_batch))
         target_policy_batch = list(filter(lambda l: bool(l), target_policy_batch))
         policy_batch = tf.boolean_mask(policy_batch, mask_policy)
@@ -46,12 +54,13 @@ def update_weights(optimizer: tf.keras.optimizers, network: BaseNetwork, batch):
         # Recurrent steps, from action and previous hidden state.
         for actions_batch, targets_batch, mask, dynamic_mask in zip(actions_time_batch, targets_time_batch,
                                                                     mask_time_batch, dynamic_mask_time_batch):
-            target_value_batch, target_reward_batch, target_policy_batch = zip(*targets_batch)
+            target_value_batch, target_reward_batch, target_policy_batch, target_next_representation_batch = zip(*targets_batch)
 
             # Only execute BPTT for elements with an action
             representation_batch = tf.boolean_mask(representation_batch, dynamic_mask)
             target_value_batch = tf.boolean_mask(target_value_batch, mask)
             target_reward_batch = tf.boolean_mask(target_reward_batch, mask)
+            target_next_representation_batch = tf.boolean_mask(target_next_representation_batch, dynamic_mask)
             # Creating conditioned_representation: concatenate representations with actions batch
             actions_batch = tf.one_hot(actions_batch, network.action_size)
 
@@ -70,6 +79,7 @@ def update_weights(optimizer: tf.keras.optimizers, network: BaseNetwork, batch):
             l = (tf.math.reduce_mean(loss_value(target_value_batch, value_batch, network.value_support_size)) +
                  MSE(target_reward_batch, tf.squeeze(reward_batch)) +
                 #  tf.math.reduce_mean(network.dynamic_network.losses) +
+                 tf.math.reduce_mean(negative_similarity(representation_batch, target_next_representation_batch)) +
                  tf.math.reduce_mean(
                      tf.nn.softmax_cross_entropy_with_logits(logits=policy_batch, labels=target_policy_batch)))
 

@@ -104,10 +104,12 @@ class AbstractGame(ABC):
                 value += reward * self.discount ** i
 
             if current_index < len(self.root_values):
-                targets.append((value, self.rewards[current_index], self.child_visits[current_index]))
+                next_index = current_index + 1 if next_index < len(self.root_values) else current_index
+                next_state = self.make_image(next_index)
+                targets.append((value, self.rewards[current_index], self.child_visits[current_index], next_state))
             else:
                 # States past the end of games are treated as absorbing states.
-                targets.append((0, 0, []))
+                targets.append((0, 0, [], self.make_image(len(self.root_values) - 1)))
         return targets
 
     def to_play(self) -> Player:
