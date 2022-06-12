@@ -56,7 +56,7 @@ def update_weights(optimizer: tf.keras.optimizers, network: BaseNetwork, batch):
             representation_batch = tf.boolean_mask(representation_batch, dynamic_mask)
             target_value_batch = tf.boolean_mask(target_value_batch, mask)
             target_reward_batch = tf.boolean_mask(target_reward_batch, mask)
-            target_next_representation_batch = network.representation_network(target_next_state_batch)
+            target_next_representation_batch = network.representation_network(np.array(target_next_state_batch))
             target_next_representation_batch = tf.boolean_mask(target_next_representation_batch, dynamic_mask)
             # Creating conditioned_representation: concatenate representations with actions batch
             actions_batch = tf.one_hot(actions_batch, network.action_size)
