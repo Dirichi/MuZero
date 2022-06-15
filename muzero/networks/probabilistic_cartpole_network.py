@@ -21,7 +21,8 @@ def posterior_mean_field(kernel_size, bias_size=0, dtype=None):
       tfp.layers.VariableLayer(2 * n, dtype=dtype),
       tfp.layers.DistributionLambda(lambda t: tfd.Independent(
           tfd.Normal(loc=t[..., :n],
-                     scale=1e-5 + tf.nn.softplus(c + t[..., n:])))),
+                     scale=1e-5 + tf.nn.softplus(c + t[..., n:])),
+          reinterpreted_batch_ndims=1)),
   ])
 
 def prior_trainable(kernel_size, bias_size=0, dtype=None):
@@ -29,7 +30,8 @@ def prior_trainable(kernel_size, bias_size=0, dtype=None):
   return Sequential([
       tfp.layers.VariableLayer(n, dtype=dtype),
       tfp.layers.DistributionLambda(lambda t: tfd.Independent(
-          tfd.Normal(loc=t, scale=1))),
+          tfd.Normal(loc=t, scale=1),
+          reinterpreted_batch_ndims=1)),
   ])
 
 class ProbabilisticCartPoleNetwork(BaseNetwork):
@@ -61,9 +63,12 @@ class ProbabilisticCartPoleNetwork(BaseNetwork):
         #                     activation=representation_activation, activity_regularizer=regularizer),
         # ])
 
+        # dynamic_network = Sequential([Dense(hidden_neurons, activation='relu', kernel_regularizer=regularizer),
+        #                               Dense(representation_size, activation=representation_activation,
+        #                                     kernel_regularizer=regularizer)])
         dynamic_network = Sequential([Dense(hidden_neurons, activation='relu', kernel_regularizer=regularizer),
-                                      Dense(representation_size, activation=representation_activation,
-                                            kernel_regularizer=regularizer)])
+                                      tfpl.DenseVariational(representation_size, posterior_mean_field, prior_trainable, activation=representation_activation,
+                                            activity_regularizer=regularizer)])
         reward_network = Sequential([Dense(16, activation='relu', kernel_regularizer=regularizer),
                                      Dense(1, kernel_regularizer=regularizer)])
 

@@ -76,7 +76,8 @@ def update_weights(optimizer: tf.keras.optimizers, network: BaseNetwork, batch):
             l = (tf.math.reduce_mean(loss_value(target_value_batch, value_batch, network.value_support_size)) +
                  MSE(target_reward_batch, tf.squeeze(reward_batch)) +
                 #  tf.math.reduce_mean(network.dynamic_network.losses) +
-                 MSE(target_next_representation_batch, representation_batch) +
+                #  (tf.math.reduce_mean(MSE(target_next_representation_batch, representation_batch)) * 0.5) +
+                 -(target_next_representation_batch.log_prob(representation_batch) * 0.5) +
                  tf.math.reduce_mean(
                      tf.nn.softmax_cross_entropy_with_logits(logits=policy_batch, labels=target_policy_batch)))
 
