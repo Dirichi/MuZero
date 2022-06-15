@@ -68,9 +68,12 @@ class ProbabilisticCartPoleNetwork(BaseNetwork):
         #                                     kernel_regularizer=regularizer)])
         dynamic_network = Sequential([
             tfpl.DenseVariational(hidden_neurons, posterior_mean_field, prior_trainable, activation='relu', activity_regularizer=regularizer),
-            tfpl.DenseVariational(representation_size, posterior_mean_field, prior_trainable, activation=representation_activation,
+            tfpl.DenseVariational(representation_size + representation_size, posterior_mean_field, prior_trainable, activation=representation_activation,
                                             activity_regularizer=regularizer),
-            tfpl.DistributionLambda(lambda t: tfd.Normal(loc=t, scale=1)),
+            tfpl.DistributionLambda(lambda t: tfd.Independent(
+                tfd.Normal(loc=t[..., :n],
+                            scale=1e-8 + tf.nn.softplus(np.log(np.expm1(1.)) + t[..., n:])),
+                reinterpreted_batch_ndims=1)),
         ])
         reward_network = Sequential([Dense(16, activation='relu', kernel_regularizer=regularizer),
                                      Dense(1, kernel_regularizer=regularizer)])
