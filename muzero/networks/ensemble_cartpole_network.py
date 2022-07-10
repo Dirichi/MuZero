@@ -70,6 +70,7 @@ class EnsembleCartPoleNetwork(BaseNetwork):
 
 class EnsembleDynamicsModel(Model):
   def __init__(self, num_models, hidden_heurons, representation_size, regularizer) -> None:
+      super(EnsembleDynamicsModel, self).__init__()
       self.num_models = num_models
       self.hidden_neurons = hidden_heurons
       self.models = []
