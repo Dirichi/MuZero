@@ -82,7 +82,7 @@ class EnsembleDynamicsModel(Model):
         self.models.append(network)
 
 
-  def __call__(self, input):
+  def call(self, input):
     outputs = []
     for model in self.models:
       output = model(input)
