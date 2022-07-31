@@ -1,6 +1,5 @@
 import collections
 from typing import Optional, Dict
-from muzero.game.cartpole_swing_up import CartPoleSwingUp
 
 import tensorflow as tf
 
