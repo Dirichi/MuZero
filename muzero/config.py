@@ -207,7 +207,7 @@ def make_ensemble_mountain_car_config() -> MuZeroConfig:
         nb_training_loop=50,
         nb_episodes=20,
         nb_epochs=20,
-        network_args={'action_size': 2,
+        network_args={'action_size': 3,
                       'state_size': 4,
                       'representation_size': 4,
                       'max_value': 200}, # Maximum episode steps for mountain car https://github.com/openai/gym/blob/master/gym/envs/classic_control/mountain_car.py#L85
