@@ -72,8 +72,9 @@ def update_weights(config: MuZeroConfig, optimizer: tf.keras.optimizers, network
                  tf.math.reduce_mean(
                      tf.nn.softmax_cross_entropy_with_logits(logits=policy_batch, labels=target_policy_batch)))
 
-            uncertainty_loss = tf.math.sigmoid(tf.math.reduce_mean(uncertainty_batch))
-            l += (uncertainty_loss * config.uncertainty_loss_weight)
+            # TODO: Decide whether to include uncertainty loss.
+            # uncertainty_loss = tf.math.sigmoid(tf.math.reduce_mean(uncertainty_batch))
+            # l += (uncertainty_loss * config.uncertainty_loss_weight)
 
             # Scale the gradient of the loss by the average number of actions unrolled
             gradient_scale = 1. / len(actions_time_batch)
