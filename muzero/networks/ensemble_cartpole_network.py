@@ -1,16 +1,17 @@
 import math
 
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras import regularizers, Sequential
 from tensorflow.keras.layers import Dense
 import tensorflow_probability as tfp
 from tensorflow.keras.models import Model
 
 from game.game import Action
-from networks.network import BaseNetwork
+from networks.network import UncertaintyAwareBaseNetwork
 
 
-class EnsembleCartPoleNetwork(BaseNetwork):
+class EnsembleCartPoleNetwork(UncertaintyAwareBaseNetwork):
 
     def __init__(self,
                  state_size: int,
@@ -89,8 +90,9 @@ class EnsembleDynamicsModel(Model):
       outputs.append(output)
 
     outputs = np.array(outputs)
-    return np.mean(outputs, axis=0)
-    # variance = np.cov(outputs)
+    prediction = tf.reduce_mean(outputs, axis=0)
+    uncertainty = tf.norm(tf.math.reduce_variance(outputs, axis=0))
+    return prediction, uncertainty
 
 
 

@@ -20,6 +20,9 @@ class MinMaxStats(object):
         self.maximum = max(self.maximum, value)
         self.minimum = min(self.minimum, value)
 
+    def is_set(self) -> bool:
+        return self.maximum > self.minimum
+
     def normalize(self, value: float) -> float:
         # If the value is unknow, by default we set it to the minimum possible value
         if value is None:

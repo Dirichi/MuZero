@@ -57,7 +57,7 @@ def update_weights(optimizer: tf.keras.optimizers, network: BaseNetwork, batch):
 
             # Recurrent step from conditioned representation: recurrent + prediction networks
             conditioned_representation_batch = tf.concat((representation_batch, actions_batch), axis=1)
-            representation_batch, reward_batch, value_batch, policy_batch = network.recurrent_model(
+            representation_batch, reward_batch, value_batch, policy_batch, uncertainty_batch = network.recurrent_model(
                 conditioned_representation_batch)
 
             # Only execute BPTT for elements with a policy target

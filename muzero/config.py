@@ -31,7 +31,8 @@ class MuZeroConfig(object):
                  td_steps: int,
                  visit_softmax_temperature_fn,
                  lr: float,
-                 known_bounds: Optional[KnownBounds] = None):
+                 known_bounds: Optional[KnownBounds] = None,
+                 uncertainty_score_weight: float = 0.3):
         ### Environment
         self.game = game
 
@@ -80,6 +81,8 @@ class MuZeroConfig(object):
         # self.lr_init = lr_init
         # self.lr_decay_rate = 0.1
         # self.lr_decay_steps = lr_decay_steps
+
+        self.uncertainty_score_weight = uncertainty_score_weight
 
     def new_game(self) -> AbstractGame:
         return self.game(self.discount)
