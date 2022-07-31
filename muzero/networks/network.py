@@ -85,7 +85,7 @@ class UncertaintyAwareRecurrentModel(Model):
     """Model that combine the dynamic, reward and prediction (value+policy) network."""
 
     def __init__(self, dynamic_network: Model, reward_network: Model, value_network: Model, policy_network: Model):
-        super(RecurrentModel, self).__init__()
+        super(UncertaintyAwareRecurrentModel, self).__init__()
         self.dynamic_network = dynamic_network
         self.reward_network = reward_network
         self.value_network = value_network
