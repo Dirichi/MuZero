@@ -16,11 +16,11 @@ def train_network(config: MuZeroConfig, storage: SharedStorage, replay_buffer: R
 
     for _ in range(epochs):
         batch = replay_buffer.sample_batch(config.num_unroll_steps, config.td_steps)
-        update_weights(optimizer, network, batch)
+        update_weights(config, optimizer, network, batch)
         storage.save_network(network.training_steps, network)
 
 
-def update_weights(optimizer: tf.keras.optimizers, network: BaseNetwork, batch):
+def update_weights(config: MuZeroConfig, optimizer: tf.keras.optimizers, network: BaseNetwork, batch):
     def scale_gradient(tensor, scale: float):
         """Trick function to scale the gradient in tensorflow"""
         return (1. - scale) * tf.stop_gradient(tensor) + scale * tensor
@@ -71,6 +71,9 @@ def update_weights(optimizer: tf.keras.optimizers, network: BaseNetwork, batch):
                  MSE(target_reward_batch, tf.squeeze(reward_batch)) +
                  tf.math.reduce_mean(
                      tf.nn.softmax_cross_entropy_with_logits(logits=policy_batch, labels=target_policy_batch)))
+
+            uncertainty_loss = tf.math.sigmoid(tf.math.reduce_mean(uncertainty_batch))
+            l += (uncertainty_loss * config.uncertainty_loss_weight)
 
             # Scale the gradient of the loss by the average number of actions unrolled
             gradient_scale = 1. / len(actions_time_batch)

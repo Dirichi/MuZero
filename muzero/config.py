@@ -1,9 +1,11 @@
 import collections
 from typing import Optional, Dict
+from muzero.game.cartpole_swing_up import CartPoleSwingUp
 
 import tensorflow as tf
 
 from game.cartpole import CartPole
+from game.cartpole_swing_up import CartPoleSwingUp
 from game.game import AbstractGame
 from networks.cartpole_network import CartPoleNetwork
 from networks.probabilistic_cartpole_network import ProbabilisticCartPoleNetwork
@@ -32,7 +34,8 @@ class MuZeroConfig(object):
                  visit_softmax_temperature_fn,
                  lr: float,
                  known_bounds: Optional[KnownBounds] = None,
-                 uncertainty_score_weight: float = 0.3):
+                 uncertainty_score_weight: float = 0.5,
+                 uncertainty_loss_weight: float = 0.5):
         ### Environment
         self.game = game
 
@@ -83,6 +86,7 @@ class MuZeroConfig(object):
         # self.lr_decay_steps = lr_decay_steps
 
         self.uncertainty_score_weight = uncertainty_score_weight
+        self.uncertainty_loss_weight = uncertainty_loss_weight
 
     def new_game(self) -> AbstractGame:
         return self.game(self.discount)
@@ -152,6 +156,30 @@ def make_ensemble_cartpole_config() -> MuZeroConfig:
 
     return MuZeroConfig(
         game=CartPole,
+        nb_training_loop=50,
+        nb_episodes=20,
+        nb_epochs=20,
+        network_args={'action_size': 2,
+                      'state_size': 4,
+                      'representation_size': 4,
+                      'max_value': 200}, # Maximum episode steps for cartpole-v0
+        network=EnsembleCartPoleNetwork,
+        action_space_size=2,
+        max_moves=1000,
+        discount=0.99,
+        dirichlet_alpha=0.25,
+        num_simulations=11,  # Odd number perform better in eval mode
+        batch_size=512,
+        td_steps=10,
+        visit_softmax_temperature_fn=visit_softmax_temperature,
+        lr=0.05)
+
+def make_ensemble_cartpole_swingup_config() -> MuZeroConfig:
+    def visit_softmax_temperature(num_moves, training_steps):
+        return 1.0
+
+    return MuZeroConfig(
+        game=CartPoleSwingUp,
         nb_training_loop=50,
         nb_episodes=20,
         nb_epochs=20,
