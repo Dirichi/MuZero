@@ -90,11 +90,12 @@ def expand_node(node: Node, to_play: Player, actions: List[Action],
     node.to_play = to_play
     node.hidden_state = network_output.hidden_state
     uncertainty_score = 0
+    uncertainty_weight = config.uncertainty_score_weight
     if uncertainty_min_max:
         uncertainty = network_output.uncertainty
         uncertainty_min_max.update(uncertainty)
         uncertainty_score = uncertainty_min_max.normalize(uncertainty) if uncertainty_min_max.is_set() else 0
-    node.reward = network_output.reward + (uncertainty_score * config.uncertainty_score_weight)
+    node.reward = (network_output.reward * (1 - uncertainty_weight)) + (uncertainty_score * uncertainty_weight)
     policy = {a: math.exp(network_output.policy_logits[a]) for a in actions}
     policy_sum = sum(policy.values())
     for action, p in policy.items():
