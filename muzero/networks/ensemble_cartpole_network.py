@@ -89,7 +89,6 @@ class EnsembleDynamicsModel(Model):
       output = model(input)
       outputs.append(output)
 
-    outputs = np.array(outputs)
     prediction = tf.reduce_mean(outputs, axis=0)
     uncertainty = tf.norm(tf.math.reduce_variance(outputs, axis=0))
     return prediction, uncertainty
