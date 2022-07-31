@@ -179,8 +179,8 @@ class UncertaintyAwareBaseNetwork(BaseNetwork):
     def recurrent_inference(self, hidden_state: np.array, action: Action) -> NetworkOutput:
         """dynamics + prediction function"""
 
-        conditioned_hidden, uncertainty = self._conditioned_hidden_state(hidden_state, action)
-        hidden_representation, reward, value, policy_logits = self.recurrent_model.predict(conditioned_hidden)
+        conditioned_hidden = self._conditioned_hidden_state(hidden_state, action)
+        hidden_representation, reward, value, policy_logits, uncertainty = self.recurrent_model.predict(conditioned_hidden)
         output = NetworkOutput(value=self._value_transform(value),
                                reward=self._reward_transform(reward),
                                policy_logits=NetworkOutput.build_policy_logits(policy_logits),
