@@ -44,13 +44,13 @@ def play_game(config: MuZeroConfig, network: AbstractNetwork, train: bool = True
         # obtain a hidden state given the current observation.
         root = Node(0)
         current_observation = game.make_image(-1)
-        expand_node(root, game.to_play(), game.legal_actions(), network.initial_inference(current_observation), config)
+        expand_node(root, game.to_play(), game.legal_actions(), network.initial_inference(current_observation), config, train)
         if train:
             add_exploration_noise(config, root)
 
         # We then run a Monte Carlo Tree Search using only action sequences and the
         # model learned by the networks.
-        run_mcts(config, root, game.action_history(), network)
+        run_mcts(config, root, game.action_history(), network, train)
         action = select_action(config, len(game.history), root, network, mode=mode_action_select)
         game.apply(action)
         game.store_search_statistics(root)

@@ -20,7 +20,9 @@ def muzero(config: MuZeroConfig):
 
     for loop in range(config.nb_training_loop):
         print("Training loop", loop)
+        print("Running self play...")
         score_train = run_selfplay(config, storage, replay_buffer, config.nb_episodes)
+        print("Training network...")
         train_network(config, storage, replay_buffer, config.nb_epochs)
 
         print("Train score:", score_train)

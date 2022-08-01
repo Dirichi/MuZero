@@ -24,7 +24,7 @@ def add_exploration_noise(config: MuZeroConfig, node: Node):
         node.children[a].prior = node.children[a].prior * (1 - frac) + n * frac
 
 
-def run_mcts(config: MuZeroConfig, root: Node, action_history: ActionHistory, network: BaseNetwork):
+def run_mcts(config: MuZeroConfig, root: Node, action_history: ActionHistory, network: BaseNetwork, train: bool = True):
     """
     Core Monte Carlo Tree Search algorithm.
     To decide on an action, we run N simulations, always starting at the root of
@@ -48,7 +48,7 @@ def run_mcts(config: MuZeroConfig, root: Node, action_history: ActionHistory, ne
         # hidden state given an action and the previous hidden state.
         parent = search_path[-2]
         network_output = network.recurrent_inference(parent.hidden_state, history.last_action())
-        expand_node(node, history.to_play(), history.action_space(), network_output, config, uncertainty_min_max)
+        expand_node(node, history.to_play(), history.action_space(), network_output, config, train, uncertainty_min_max)
 
         backpropagate(search_path, network_output.value, history.to_play(), config.discount, min_max_stats)
 
@@ -82,7 +82,7 @@ def ucb_score(config: MuZeroConfig, parent: Node, child: Node,
 
 
 def expand_node(node: Node, to_play: Player, actions: List[Action],
-                network_output: NetworkOutput, config: MuZeroConfig, uncertainty_min_max: MinMaxStats = None):
+                network_output: NetworkOutput, config: MuZeroConfig, train: bool = True, uncertainty_min_max: MinMaxStats = None):
     """
     We expand a node using the value, reward and policy prediction obtained from
     the neural networks.
@@ -90,8 +90,8 @@ def expand_node(node: Node, to_play: Player, actions: List[Action],
     node.to_play = to_play
     node.hidden_state = network_output.hidden_state
     uncertainty_score = 0
-    uncertainty_weight = config.uncertainty_score_weight
-    if uncertainty_min_max:
+    uncertainty_weight = config.uncertainty_score_weight if train else 0
+    if train and uncertainty_min_max:
         uncertainty = network_output.uncertainty
         uncertainty_min_max.update(uncertainty)
         uncertainty_score = uncertainty_min_max.normalize(uncertainty) if uncertainty_min_max.is_set() else 0
