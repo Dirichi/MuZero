@@ -112,7 +112,7 @@ def expand_node(network: BaseNetwork, node: Node, to_play: Player, actions: List
     for uncertain_policy in uncertain_policies:
         uncertainty_min_max.update(uncertain_policy.uncertainty)
 
-    for uncertain_policy in uncertain_policies.items():
+    for uncertain_policy in uncertain_policies:
         prior = uncertain_policy.prior / policy_sum
         if train:
             uncertainty_score = uncertainty_min_max.normalize(uncertain_policy.uncertainty)
