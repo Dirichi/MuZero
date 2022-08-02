@@ -5,7 +5,7 @@ from game.game import AbstractGame
 from networks.network import AbstractNetwork
 from networks.shared_storage import SharedStorage
 from self_play.mcts import run_mcts, select_action, expand_node, add_exploration_noise
-from self_play.utils import Node
+from self_play.utils import Node, MinMaxStats
 from training.replay_buffer import ReplayBuffer
 
 
@@ -43,14 +43,15 @@ def play_game(config: MuZeroConfig, network: AbstractNetwork, train: bool = True
         # At the root of the search tree we use the representation function to
         # obtain a hidden state given the current observation.
         root = Node(0)
+        uncertainty_min_max = MinMaxStats(known_bounds=None)
         current_observation = game.make_image(-1)
-        expand_node(root, game.to_play(), game.legal_actions(), network.initial_inference(current_observation), config, train)
+        expand_node(network, root, game.to_play(), game.legal_actions(), network.initial_inference(current_observation), config, train, uncertainty_min_max)
         if train:
             add_exploration_noise(config, root)
 
         # We then run a Monte Carlo Tree Search using only action sequences and the
         # model learned by the networks.
-        run_mcts(config, root, game.action_history(), network, train)
+        run_mcts(config, root, game.action_history(), network, uncertainty_min_max, train)
         action = select_action(config, len(game.history), root, network, mode=mode_action_select)
         game.apply(action)
         game.store_search_statistics(root)
