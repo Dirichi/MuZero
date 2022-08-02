@@ -114,7 +114,7 @@ def expand_node(network: BaseNetwork, node: Node, to_play: Player, actions: List
 
     for uncertain_policy in uncertain_policies:
         prior = uncertain_policy.prior / policy_sum
-        if train:
+        if train and uncertainty_min_max.count > 4:
             uncertainty_score = uncertainty_min_max.normalize(uncertain_policy.uncertainty)
             uncertainty_weight = config.uncertainty_score_weight
             prior = ((1 - uncertainty_weight) * prior) + (uncertainty_weight * uncertainty_score)
