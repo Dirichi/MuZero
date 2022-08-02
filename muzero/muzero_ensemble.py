@@ -20,11 +20,14 @@ def muzero(config: MuZeroConfig):
 
     for loop in range(config.nb_training_loop):
         print("Training loop", loop)
-        score_train = run_selfplay(config, storage, replay_buffer, config.nb_episodes)
+        score_train, uncertainty_train = run_selfplay(config, storage, replay_buffer, config.nb_episodes)
+        print("Train score:", score_train)
+        print("Train uncertainty:", uncertainty_train)
         train_network(config, storage, replay_buffer, config.nb_epochs)
 
-        print("Train score:", score_train)
-        print("Eval score:", run_eval(config, storage, 20))
+        score_eval, uncertainty_eval = run_eval(config, storage, 20)
+        print("Eval score:", score_eval)
+        print("Eval uncertainty:", uncertainty_eval)
         print(f"MuZero played {config.nb_episodes * (loop + 1)} "
               f"episodes and trained for {config.nb_epochs * (loop + 1)} epochs.\n")
 

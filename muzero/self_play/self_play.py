@@ -13,21 +13,30 @@ def run_selfplay(config: MuZeroConfig, storage: SharedStorage, replay_buffer: Re
     """Take the latest network, produces multiple games and save them in the shared replay buffer"""
     network = storage.latest_network()
     returns = []
+    uncertainties = []
     for _ in range(train_episodes):
         game = play_game(config, network)
         replay_buffer.save_game(game)
         returns.append(sum(game.rewards))
-    return sum(returns) / train_episodes
+        uncertainties.append(sum(game.uncertainties))
+    avg_return = sum(returns) / train_episodes
+    avg_uncertainty = sum(uncertainties) / train_episodes
+    return avg_return, avg_uncertainty
 
 
 def run_eval(config: MuZeroConfig, storage: SharedStorage, eval_episodes: int):
     """Evaluate MuZero without noise added to the prior of the root and without softmax action selection"""
     network = storage.latest_network()
     returns = []
+    uncertainties = []
     for _ in range(eval_episodes):
         game = play_game(config, network, train=False)
         returns.append(sum(game.rewards))
-    return sum(returns) / eval_episodes if eval_episodes else 0
+        uncertainties.append(sum(game.uncertainties))
+    avg_return = sum(returns) / eval_episodes if eval_episodes else 0
+    avg_uncertainty = sum(uncertainties) / eval_episodes if eval_episodes else 0
+    return avg_return, avg_uncertainty
+
 
 
 def play_game(config: MuZeroConfig, network: AbstractNetwork, train: bool = True) -> AbstractGame:
