@@ -48,9 +48,9 @@ def run_mcts(config: MuZeroConfig, root: Node, action_history: ActionHistory, ne
         # hidden state given an action and the previous hidden state.
         parent = search_path[-2]
         network_output = network.recurrent_inference(parent.hidden_state, history.last_action())
-        expand_node(node, history.to_play(), history.action_space(), network_output, config, train, uncertainty_min_max)
+        expand_node(node, history.to_play(), history.action_space(), network_output, uncertainty_min_max)
 
-        backpropagate(search_path, network_output.value, history.to_play(), config.discount, min_max_stats)
+        backpropagate(search_path, network_output.value, history.to_play(), config.discount, min_max_stats, uncertainty_min_max, config, train)
 
 
 def select_child(config: MuZeroConfig, node: Node, min_max_stats: MinMaxStats):
@@ -82,20 +82,17 @@ def ucb_score(config: MuZeroConfig, parent: Node, child: Node,
 
 
 def expand_node(node: Node, to_play: Player, actions: List[Action],
-                network_output: NetworkOutput, config: MuZeroConfig, train: bool = True, uncertainty_min_max: MinMaxStats = None):
+                network_output: NetworkOutput, uncertainty_min_max: MinMaxStats = None):
     """
     We expand a node using the value, reward and policy prediction obtained from
     the neural networks.
     """
     node.to_play = to_play
     node.hidden_state = network_output.hidden_state
-    uncertainty_score = 0
-    uncertainty_weight = config.uncertainty_score_weight if train else 0
-    if train and uncertainty_min_max:
-        uncertainty = network_output.uncertainty
-        uncertainty_min_max.update(uncertainty)
-        uncertainty_score = uncertainty_min_max.normalize(uncertainty) if uncertainty_min_max.is_set() else 0
-    node.reward = (network_output.reward * (1 - uncertainty_weight)) + (uncertainty_score * uncertainty_weight)
+    node.reward = network_output.reward
+    node.uncertainty = network_output.uncertainty
+    if uncertainty_min_max:
+        uncertainty_min_max.update(node.uncertainty)
     policy = {a: math.exp(network_output.policy_logits[a]) for a in actions}
     policy_sum = sum(policy.values())
     for action, p in policy.items():
@@ -103,7 +100,7 @@ def expand_node(node: Node, to_play: Player, actions: List[Action],
 
 
 def backpropagate(search_path: List[Node], value: float, to_play: Player,
-                  discount: float, min_max_stats: MinMaxStats):
+                  discount: float, min_max_stats: MinMaxStats, uncertainty_min_max: MinMaxStats, config: MuZeroConfig, train: bool):
     """
     At the end of a simulation, we propagate the evaluation all the way up the
     tree to the root.
@@ -112,8 +109,13 @@ def backpropagate(search_path: List[Node], value: float, to_play: Player,
         node.value_sum += value if node.to_play == to_play else -value
         node.visit_count += 1
         min_max_stats.update(node.value())
+        reward = node.reward
+        if train:
+            uncertainty = uncertainty_min_max.normalize(node.uncertainty) if uncertainty_min_max.is_set() else 0
+            uncertainty_weight = config.uncertainty_score_weight
+            reward = (reward * (1 - uncertainty_weight)) + (uncertainty * uncertainty_weight)
 
-        value = node.reward + discount * value
+        value = reward + (discount * value)
 
 
 def select_action(config: MuZeroConfig, num_moves: int, node: Node, network: BaseNetwork, mode: str = 'softmax'):

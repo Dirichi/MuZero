@@ -44,7 +44,7 @@ def play_game(config: MuZeroConfig, network: AbstractNetwork, train: bool = True
         # obtain a hidden state given the current observation.
         root = Node(0)
         current_observation = game.make_image(-1)
-        expand_node(root, game.to_play(), game.legal_actions(), network.initial_inference(current_observation), config, train)
+        expand_node(root, game.to_play(), game.legal_actions(), network.initial_inference(current_observation))
         if train:
             add_exploration_noise(config, root)
 
