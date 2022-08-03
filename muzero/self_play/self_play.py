@@ -14,13 +14,15 @@ def run_selfplay(config: MuZeroConfig, storage: SharedStorage, replay_buffer: Re
     network = storage.latest_network()
     returns = []
     uncertainties = []
+    uncertainty_count = 0
     for _ in range(train_episodes):
         game = play_game(config, network)
         replay_buffer.save_game(game)
         returns.append(sum(game.rewards))
         uncertainties.append(sum(game.uncertainties))
+        uncertainty_count += len(game.uncertainties)
     avg_return = sum(returns) / train_episodes
-    avg_uncertainty = sum(uncertainties) / train_episodes
+    avg_uncertainty = sum(uncertainties) / uncertainty_count
     return avg_return, avg_uncertainty
 
 
@@ -29,12 +31,14 @@ def run_eval(config: MuZeroConfig, storage: SharedStorage, eval_episodes: int):
     network = storage.latest_network()
     returns = []
     uncertainties = []
+    uncertainty_count = 0
     for _ in range(eval_episodes):
         game = play_game(config, network, train=False)
         returns.append(sum(game.rewards))
         uncertainties.append(sum(game.uncertainties))
+        uncertainty_count += len(game.uncertainties)
     avg_return = sum(returns) / eval_episodes if eval_episodes else 0
-    avg_uncertainty = sum(uncertainties) / eval_episodes if eval_episodes else 0
+    avg_uncertainty = sum(uncertainties) / uncertainty_count if uncertainty_count else 0
     return avg_return, avg_uncertainty
 
 
