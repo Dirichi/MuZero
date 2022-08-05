@@ -52,7 +52,6 @@ def update_weights(config: MuZeroConfig, optimizer: tf.keras.optimizers, network
             # Only execute BPTT for elements with an action
             representation_batch = tf.boolean_mask(representation_batch, dynamic_mask)
             # Half the gradient of the representation
-            representation_batch = scale_gradient(representation_batch, 0.5)
             target_hidden_state_batch = tf.boolean_mask(target_hidden_state_batch, dynamic_mask)
             target_value_batch = tf.boolean_mask(target_value_batch, mask)
             target_reward_batch = tf.boolean_mask(target_reward_batch, mask)
@@ -63,6 +62,7 @@ def update_weights(config: MuZeroConfig, optimizer: tf.keras.optimizers, network
             conditioned_representation_batch = tf.concat((representation_batch, actions_batch), axis=1)
             representation_batch, reward_batch, value_batch, policy_batch, uncertainty_batch = network.recurrent_model(
                 conditioned_representation_batch)
+            representation_batch = scale_gradient(representation_batch, 0.5)
 
             # Only execute BPTT for elements with a policy target
             target_policy_batch = [policy for policy, b in zip(target_policy_batch, mask) if b]
