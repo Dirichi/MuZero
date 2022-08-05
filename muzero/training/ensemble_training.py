@@ -33,7 +33,7 @@ def update_weights(config: MuZeroConfig, optimizer: tf.keras.optimizers, network
         representation_batch, value_batch, policy_batch = network.initial_model(np.array(image_batch))
 
         # Only update the element with a policy target
-        target_value_batch, _, target_policy_batch = zip(*targets_init_batch)
+        target_value_batch, _, target_policy_batch, _ = zip(*targets_init_batch)
         mask_policy = list(map(lambda l: bool(l), target_policy_batch))
         target_policy_batch = list(filter(lambda l: bool(l), target_policy_batch))
         policy_batch = tf.boolean_mask(policy_batch, mask_policy)
