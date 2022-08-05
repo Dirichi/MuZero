@@ -97,7 +97,7 @@ class AbstractGame(ABC):
         targets = []
         for current_index in range(state_index, state_index + num_unroll_steps + 1):
             bootstrap_index = current_index + td_steps
-            next_state_idx = min(current_index + 1, len(self.observations))
+            next_state_idx = min(current_index + 1, len(self.observations) - 1)
             next_image = self.make_image(next_state_idx)
 
             if bootstrap_index < len(self.root_values):
