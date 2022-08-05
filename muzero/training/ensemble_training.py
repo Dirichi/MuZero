@@ -46,10 +46,14 @@ def update_weights(config: MuZeroConfig, optimizer: tf.keras.optimizers, network
         # Recurrent steps, from action and previous hidden state.
         for actions_batch, targets_batch, mask, dynamic_mask in zip(actions_time_batch, targets_time_batch,
                                                                     mask_time_batch, dynamic_mask_time_batch):
-            target_value_batch, target_reward_batch, target_policy_batch = zip(*targets_batch)
+            target_value_batch, target_reward_batch, target_policy_batch, target_next_state = zip(*targets_batch)
+            target_hidden_state_batch = network.representation_network(target_next_state).detach()
 
             # Only execute BPTT for elements with an action
             representation_batch = tf.boolean_mask(representation_batch, dynamic_mask)
+            # Half the gradient of the representation
+            representation_batch = scale_gradient(representation_batch, 0.5)
+            target_hidden_state_batch = tf.boolean_mask(target_hidden_state_batch, dynamic_mask)
             target_value_batch = tf.boolean_mask(target_value_batch, mask)
             target_reward_batch = tf.boolean_mask(target_reward_batch, mask)
             # Creating conditioned_representation: concatenate representations with actions batch
@@ -69,6 +73,7 @@ def update_weights(config: MuZeroConfig, optimizer: tf.keras.optimizers, network
             # Compute the partial loss
             l = (tf.math.reduce_mean(loss_value(target_value_batch, value_batch, network.value_support_size)) +
                  MSE(target_reward_batch, tf.squeeze(reward_batch)) +
+                 MSE(target_hidden_state_batch, tf.squeeze(representation_batch)) +
                  tf.math.reduce_mean(
                      tf.nn.softmax_cross_entropy_with_logits(logits=policy_batch, labels=target_policy_batch)))
 
@@ -79,9 +84,6 @@ def update_weights(config: MuZeroConfig, optimizer: tf.keras.optimizers, network
             # Scale the gradient of the loss by the average number of actions unrolled
             gradient_scale = 1. / len(actions_time_batch)
             loss += scale_gradient(l, gradient_scale)
-
-            # Half the gradient of the representation
-            representation_batch = scale_gradient(representation_batch, 0.5)
 
         return loss
 
