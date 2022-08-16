@@ -12,6 +12,7 @@ class MinMaxStats(object):
     def __init__(self, known_bounds):
         self.maximum = known_bounds.max if known_bounds else -MAXIMUM_FLOAT_VALUE
         self.minimum = known_bounds.min if known_bounds else MAXIMUM_FLOAT_VALUE
+        self.count = 0
 
     def update(self, value: float):
         if value is None:
@@ -19,6 +20,7 @@ class MinMaxStats(object):
 
         self.maximum = max(self.maximum, value)
         self.minimum = min(self.minimum, value)
+        self.count += 1
 
     def is_set(self) -> bool:
         return self.maximum > self.minimum
